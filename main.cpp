@@ -55,7 +55,7 @@ int main() {
                 enterInt(answer);
 
                 dict.addWord(unit);
-                cout << "Слова были доданы.";
+                cout << "Слова были доданы." << endl;
             }
             break;
         case 3:
@@ -65,6 +65,7 @@ int main() {
                 cin >> word;
                 toLow(word);
                 dict.removeWord(word);
+                cout << '\"' << word << "\" было удалено." << endl;
             }
             break;
         case 4:

@@ -39,6 +39,7 @@ struct Node {
 
         return l_units.front();
     }
+
     friend bool operator== (const Node &left, const Node &right) {
         return left.l_units == right.l_units
                && left.left == right.left
@@ -63,8 +64,8 @@ public:
     bool isAbc_type();
 
 private:
-    static void sortUnitsByWrd(Unit *units, int size);
-    static void sortUnitsByCnt(Unit *units, int size);
+    static bool wrd_pred(const Unit &a, const Unit &b);
+    static bool cnt_pred(const Unit &a, const Unit &b);
     void getAllTreeUnits(queue<Unit> &queue);
 
     void initializeTree(Unit *units, int size);

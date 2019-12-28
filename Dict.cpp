@@ -1,6 +1,6 @@
 #include "Dict.h"
 #include <fstream>
-
+#include <algorithm>
 
 Dict::Dict(const string &filePath)
     : filePath(filePath)
@@ -9,7 +9,7 @@ Dict::Dict(const string &filePath)
 {
     ifstream f_in(filePath);
     if (f_in.is_open()) {
-        if (f_in.peek() == ifstream::traits_type::eof()) // file is empty?
+        if (f_in.peek() == ifstream::traits_type::eof())
             return;
 
         int size = 0;
@@ -29,7 +29,7 @@ Dict::Dict(const string &filePath)
         f_in.close();
 
         if(!sorted)
-            sortUnitsByWrd(units, size);
+            sort(units, units + size, wrd_pred);
 
         initializeTree(units, size);
         delete[] units;
@@ -62,14 +62,8 @@ Dict::~Dict() {
 
         f_out << size << ' ' << true << ' ';
 
-        if (abc_type) {
-            sortUnitsByWrd(units, size);
-            f_out << true;
-        }
-        else {
-            sortUnitsByCnt(units, size);
-            f_out << false;
-        }
+        abc_type ? sort(units, units + size, wrd_pred) : sort(units, units + size, cnt_pred);
+        f_out << abc_type;
         f_out << '\n';
 
         for (i = 0; i < size; ++i) {
@@ -78,32 +72,6 @@ Dict::~Dict() {
                   << units[i].counter << '\n';
         }
         f_out.close();
-    }
-}
-
-void Dict::sortUnitsByWrd(Unit *units, int size) { // Bubbles method. Sort by Word
-    Unit temp;
-    for (int i = 0; i < size - 1; i++) {
-        for (int j = 0; j < size - i - 1; j++) {
-            if (getCode(units[j].word) > getCode(units[j + 1].word)) {
-                temp = units[j];
-                units[j] = units[j + 1];
-                units[j + 1] = temp;
-            }
-        }
-    }
-}
-
-void Dict::sortUnitsByCnt(Unit *units, int size) { // Bubbles method. Sort by Counter
-    Unit temp;
-    for (int i = 0; i < size - 1; i++) {
-        for (int j = 0; j < size - i - 1; j++) {
-            if (units[j].counter > units[j + 1].counter) {
-                temp = units[j];
-                units[j] = units[j + 1];
-                units[j + 1] = temp;
-            }
-        }
     }
 }
 
@@ -175,7 +143,7 @@ void Dict::addWord(const Unit &unit) {
         else if (code0 > code1) {
             c_node = c_node->right;
         }
-        else { // collision
+        else { // If collision
             bool found = false;
             for (Unit &t_unit : c_node->l_units) {
                 if (t_unit.word == unit.word) {
@@ -226,6 +194,7 @@ void Dict::removeWord(const string &wr) {
                     node->l_units.remove(unit);
                     found = true;
                     was_changed = true;
+                    break;
                 }
             }
         } else { // Delete Node and reinitialize Tree
@@ -245,11 +214,10 @@ void Dict::removeWord(const string &wr) {
             }
             tree.clear();
 
-            abc_type ? sortUnitsByWrd(units, size) : sortUnitsByCnt(units, size);
+            abc_type ? sort(units, units + size, wrd_pred) : sort(units, units + size, cnt_pred);
 
             initializeTree(units, size);
             delete[] units;
-            cout << '\"' << wr << "\" было удалено.";
         }
     }
     if (!found)
@@ -353,7 +321,7 @@ void Dict::changeType() {
     }
     tree.clear();
 
-    abc_type ? sortUnitsByCnt(units, size) : sortUnitsByWrd(units, size);
+    abc_type ? sort(units, units + size, wrd_pred) : sort(units, units + size, cnt_pred);
 
     initializeTree(units, size);
     abc_type = !abc_type;
@@ -361,4 +329,12 @@ void Dict::changeType() {
 
 bool Dict::isAbc_type() {
     return abc_type;
+}
+
+bool Dict::wrd_pred(const Unit &a, const Unit &b) {
+    return getCode(a.word) < getCode(b.word);
+}
+
+bool Dict::cnt_pred(const Unit &a, const Unit &b) {
+    return a.counter < b.counter;
 }
